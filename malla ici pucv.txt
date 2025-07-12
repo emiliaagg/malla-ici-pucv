@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🌺 Malla Ingeniería Civil Industrial PUCV</title>
+  <style>
+    :root {
+      --azul: #2c75ff;
+      --celeste: #a3d8f4;
+      --gris: #e0e0e0;
+      --fondo: #f6fbff;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--fondo);
+      color: #222;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: var(--azul);
+      font-size: 28px;
+    }
+    .hibisco {
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .controls {
+      text-align: center;
+      margin: 10px 0 30px;
+    }
+    .controls button, .controls select {
+      margin: 5px;
+      padding: 8px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--celeste);
+    }
+    .controls button:hover {
+      background: var(--azul);
+      color: white;
+    }
+    .semester {
+      margin-bottom: 30px;
+    }
+    .semester h2 {
+      color: var(--azul);
+      border-bottom: 2px solid var(--celeste);
+    }
+    .ramo {
+      display: inline-block;
+      background: white;
+      border: 1px solid #aaa;
+      padding: 8px 12px;
+      margin: 4px;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .ramo:hover {
+      background: var(--celeste);
+    }
+    .ramo.completed {
+      text-decoration: line-through;
+      background: var(--gris);
+      color: #777;
+    }
+    .ramo.locked {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hibisco">🌺</div>
+  <h1>Malla Ingeniería Civil Industrial PUCV</h1>
+
+  <div class="controls">
+    <button onclick="reiniciar()">🔄 Reiniciar</button>
+    <select onchange="filtrar(this.value)">
+      <option value="todos">🔎 Ver todos</option>
+      <option value="completados">✅ Solo completados</option>
+      <option value="pendientes">📌 Solo pendientes</option>
+    </select>
+  </div>
+
+  <div id="malla"></div>
+
+  <script>
+    const ramos = {
+      'fund_mat': { name: 'Fundamentos de matemáticas', sem: 1, prereq: [] },
+      'intro_ing': { name: 'Introducción a la ingeniería industrial', sem: 1, prereq: [] },
+      'com1': { name: 'Comunicación 1', sem: 1, prereq: [] },
+      'perspectivas': { name: 'Perspectivas de desarrollo profesional', sem: 1, prereq: [] },
+      'antropologia': { name: 'Antropología cristiana', sem: 1, prereq: [] },
+      'calc_diff': { name: 'Cálculo diferencial', sem: 2, prereq: ['fund_mat'] },
+      'model_discreto': { name: 'Introducción al Modelamiento', sem: 2, prereq: ['intro_ing'] },
+      'tec_info': { name: 'Introducción a las tecnologías de información', sem: 2, prereq: ['intro_ing'] },
+      'etica': { name: 'Ética cristiana', sem: 2, prereq: [] },
+      'form_fun1': { name: 'Formación fundamental 1', sem: 2, prereq: [] },
+      'fisica': { name: 'Física', sem: 3, prereq: ['calc_diff'] },
+      'calc_var': { name: 'Cálculo en varias variables', sem: 3, prereq: ['calc_diff'] },
+      'metod_investig': { name: 'Métodos de investigación', sem: 3, prereq: ['intro_ing'] },
+      'arquitectura_soft': { name: 'Arquitectura de sistemas de software', sem: 3, prereq: ['tec_info'] },
+      'taller_eq': { name: 'Taller de trabajo en equipo', sem: 3, prereq: ['perspectivas'] },
+      'electromagnetismo': { name: 'Electromagnetismo', sem: 4, prereq: ['fisica', 'calc_var'] },
+      'intro_termo': { name: 'Introducción a la termodinámica', sem: 4, prereq: ['calc_diff'] },
+      'algebra_lineal': { name: 'Álgebra lineal', sem: 4, prereq: ['fund_mat'] },
+      'fund_model_prob': { name: 'Fundamentos de modelos probabilísticos', sem: 4, prereq: ['model_discreto', 'calc_var'] },
+      'com2': { name: 'Comunicación 2', sem: 4, prereq: ['com1'] },
+      'ingles1': { name: 'Inglés 1', sem: 4, prereq: [] },
+      'termo_apl': { name: 'Termodinámica aplicada', sem: 5, prereq: ['intro_termo'] },
+      'sist_dinamicos': { name: 'Modelos para sistemas dinámicos', sem: 5, prereq: ['calc_var'] },
+      'inferencia': { name: 'Inferencia estadística', sem: 5, prereq: ['fund_model_prob', 'metod_investig'] },
+      'pensamiento_sistemico': { name: 'Pensamiento sistémico', sem: 5, prereq: ['fund_model_prob', 'metod_investig'] },
+      'form_fun2': { name: 'Formación fundamental 2', sem: 5, prereq: [] },
+      'ingles2': { name: 'Inglés 2', sem: 5, prereq: ['ingles1'] },
+      'sist_gen': { name: 'Sistemas de generación', sem: 6, prereq: ['electromagnetismo'] },
+      'opt_lineal': { name: 'Optimización lineal', sem: 6, prereq: ['algebra_lineal'] },
+      'analisis_econ1': { name: 'Análisis económico 1', sem: 6, prereq: ['fund_model_prob'] },
+      'teoria_org': { name: 'Teoría de la organización', sem: 6, prereq: ['pensamiento_sistemico'] },
+      'form_fun3': { name: 'Formación fundamental 3', sem: 6, prereq: [] },
+      'ingles3': { name: 'Inglés 3', sem: 6, prereq: ['ingles2'] },
+      'inv_operaciones': { name: 'Investigación de operaciones', sem: 7, prereq: ['opt_lineal'] },
+      'analisis_econ2': { name: 'Análisis económico 2', sem: 7, prereq: ['analisis_econ1'] },
+      'eval_proy': { name: 'Formulación y evaluación de proyectos', sem: 7, prereq: ['analisis_econ1'] },
+      'dir_control': { name: 'Dirección y control estratégico', sem: 7, prereq: ['teoria_org'] },
+      'ind_org': { name: 'Industria y organizaciones', sem: 7, prereq: ['pensamiento_sistemico'] },
+      'ingles4': { name: 'Inglés 4', sem: 7, prereq: ['ingles3'] },
+      'intro_ds': { name: 'Introducción a data science', sem: 7, prereq: ['inferencia'] },
+      'gest_cont': { name: 'Gestión contable y presupuestaria', sem: 7, prereq: ['analisis_econ1'] },
+      'marketing': { name: 'Marketing', sem: 7, prereq: ['dir_control'] },
+      'model_proc': { name: 'Modelamiento de procesos y sistemas', sem: 7, prereq: ['ind_org', 'arquitectura_soft'] },
+      'taller_crea': { name: 'Taller de creatividad e innovación', sem: 7, prereq: ['teoria_org'] },
+      'plan_oper': { name: 'Planificación de operaciones', sem: 7, prereq: ['inv_operaciones'] },
+      'simulacion': { name: 'Simulación', sem: 7, prereq: ['inferencia', 'arquitectura_soft', 'opt_lineal'] },
+      'dir_proy': { name: 'Dirección de proyectos', sem: 7, prereq: ['eval_proy'] },
+      'gest_serv': { name: 'Gestión de servicios', sem: 7, prereq: ['dir_control'] },
+      'gest_info': { name: 'Gestión de la información y del conocimiento', sem: 7, prereq: ['model_proc'] },
+      'taller_com': { name: 'Taller de comunicación ejecutiva', sem: 7, prereq: ['com2', 'ind_org'] },
+      'logistica': { name: 'Logística', sem: 7, prereq: ['inv_operaciones'] },
+      'ing_financiera': { name: 'Ingeniería financiera', sem: 7, prereq: ['gest_cont'] },
+      'der_emp_amb': { name: 'Derecho empresarial y ambiental', sem: 7, prereq: ['dir_control'] },
+      'proy1': { name: 'Proyecto de ingeniería industrial 1', sem: 8, prereq: ['dir_proy', 'plan_oper', 'gest_info'] },
+      'proy2': { name: 'Proyecto de ingeniería industrial 2', sem: 9, prereq: ['proy1'] },
+    };
+
+    const estado = JSON.parse(localStorage.getItem('estadoRamos') || '{}');
+
+    function init() {
+      const contenedor = document.getElementById('malla');
+      contenedor.innerHTML = '';
+
+      const maxSem = Math.max(...Object.values(ramos).map(r => r.sem));
+
+      for (let s = 1; s <= maxSem; s++) {
+        const semDiv = document.createElement('div');
+        semDiv.className = 'semester';
+        semDiv.innerHTML = `<h2>Semestre ${s}</h2>`;
+        contenedor.appendChild(semDiv);
+
+        for (let key in ramos) {
+          const ramo = ramos[key];
+          if (ramo.sem === s) {
+            const div = document.createElement('div');
+            div.id = key;
+            div.className = 'ramo';
+            div.innerText = ramo.name;
+
+            if (!ramo.prereq.length) {
+              div.onclick = () => completar(key);
+            } else {
+              div.classList.add('locked');
+            }
+
+            semDiv.appendChild(div);
+          }
+        }
+      }
+
+      aplicarEstadoGuardado();
+      desbloquearRamos();
+    }
+
+    function completar(key) {
+      const el = document.getElementById(key);
+      el.classList.add('completed');
+      el.onclick = null;
+      estado[key] = true;
+      localStorage.setItem('estadoRamos', JSON.stringify(estado));
+      desbloquearRamos();
+    }
+
+    function desbloquearRamos() {
+      for (let key in ramos) {
+        const ramo = ramos[key];
+        if (!estado[key]) {
+          const cumple = ramo.prereq.every(p => estado[p]);
+          const el = document.getElementById(key);
+          if (cumple && el.classList.contains('locked')) {
+            el.classList.remove('locked');
+            el.onclick = () => completar(key);
+          }
+        }
+      }
+    }
+
+    function aplicarEstadoGuardado() {
+      for (let key in estado) {
+        if (estado[key]) {
+          const el = document.getElementById(key);
+          if (el) {
+            el.classList.add('completed');
+            el.onclick = null;
+          }
+        }
+      }
+    }
+
+    function reiniciar() {
+      if (confirm("¿Seguro que quieres reiniciar tu progreso?")) {
+        localStorage.removeItem('estadoRamos');
+        location.reload();
+      }
+    }
+
+    function filtrar(opcion) {
+      for (let key in ramos) {
+        const el = document.getElementById(key);
+        if (!el) continue;
+
+        if (opcion === 'todos') {
+          el.classList.remove('hidden');
+        } else if (opcion === 'completados') {
+          el.classList.toggle('hidden', !el.classList.contains('completed'));
+        } else if (opcion === 'pendientes') {
+          el.classList.toggle('hidden', el.classList.contains('completed'));
+        }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
